@@ -50,9 +50,50 @@ module Unbounce
 
     def get_responses(opts = {})
       params = set_params(opts)
-      response = parse_json(RestClient.get(@url+params[:path], params: params,Authorization: @auth, headers: @headers)).body
-                 
-      # response = (opts[:data]) ? response[opts[:data]] : response 
+      response = parse_json(RestClient.get(@url+params[:path], params: params,Authorization: @auth, headers: @headers)).body      
+      
+      more = response["metadata"]["next"].nil? ?  nil : response["metadata"]["next"]["href"]
+
+      while more
+        more_response = parse_json(RestClient.get(more,Authorization: @auth, headers: @headers)).body
+
+        if more_response["leads"]
+          response["leads"].push(more_response["leads"])
+          response["leads"].flatten!
+        end
+
+        if more_response["domains"]
+          response["domains"].push(more_response["domains"])
+          response["domains"].flatten!
+        end
+
+        if more_response["pages"]
+          response["pages"].push(more_response["pages"])
+          response["pages"].flatten!
+        end
+
+        if more_response["page_groups"]
+          response["page_groups"].push(more_response["page_groups"])
+          response["page_groups"].flatten!
+        end
+
+        if more_response["sub_accounts"]
+          response["sub_accounts"].push(more_response["sub_accounts"])
+          response["sub_accounts"].flatten!
+        end
+
+        if more_response["accounts"]
+          response["accounts"].push(more_response["accounts"])
+          response["accounts"].flatten!
+        end
+
+        if more_response["form_fields"]
+          response["form_fields"].push(more_response["form_fields"])
+          response["form_fields"].flatten!
+        end
+        
+        more = more_response["metadata"]["next"].nil? ?  nil : more_response["metadata"]["next"]["href"]
+      end                 
       
       return response
     end
